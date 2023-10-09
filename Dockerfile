@@ -13,6 +13,6 @@ RUN go build \
     -ldflags="-s -w -extldflags=-static" \
     -tags="osusergo netgo static_build" \
     -o "/restartable-server" \
-    "cmd/server/main.go" && rm -rf .
+    "cmd/server/main.go" && rm -rf /usr/src/app
 
 CMD ["/restartable-server"]

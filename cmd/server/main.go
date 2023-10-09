@@ -26,6 +26,7 @@ func main() {
 		},
 		log.Default(),
 	)
+
 	serverID := fmt.Sprintf("%p", server.GetServer())
 
 	// create fallback server to handle incoming requests while productive server is down
