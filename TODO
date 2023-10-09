@@ -1,0 +1,147 @@
+package utils
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	log "github.geo.conti.de/GroupIT-CS/golib-log"
+	util "github.geo.conti.de/GroupIT-CS/golib-util"
+)
+
+type (
+	RestartableServer interface {
+		ListenAndServeWithRecover(main func(), after time.Duration)
+		GetLogger() *log.Logger
+		GetServer() *http.Server
+		ReceiveInterrupt() chan os.Signal
+		RecoverAndRestart(main func(), after time.Duration)
+		Restart(main func(), after time.Duration)
+		SetHandler(handler http.Handler)
+		ShutdownOrRestart(main func(), after, timeout time.Duration)
+	}
+
+	restartableServer struct {
+		*http.Server
+		*log.Logger
+		sig chan os.Signal
+	}
+)
+
+var _ RestartableServer = new(restartableServer)
+
+func (s restartableServer) GetLogger() *log.Logger  { return s.Logger }
+func (s restartableServer) GetServer() *http.Server { return s.Server }
+
+func (s restartableServer) ListenAndServeWithRecover(main func(), after time.Duration) {
+	defer s.RecoverAndRestart(main, after)
+
+	s.Infof("Serving at %q...", s.Addr)
+	if err := s.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		s.Panic(util.GetErrorWithStacktrace(err))
+	}
+}
+
+func (s restartableServer) ReceiveInterrupt() chan os.Signal { return s.sig }
+
+func (s restartableServer) RecoverAndRestart(main func(), after time.Duration) {
+	if v := recover(); v != nil {
+		if err, ok := v.(error); ok {
+			s.Error(util.GetErrorWithStacktrace(err))
+		} else {
+			s.Error(v)
+		}
+		s.Restart(main, after)
+	}
+}
+
+func (s restartableServer) Restart(main func(), after time.Duration) {
+	var (
+		now           = time.Now().Add(after)
+		tickFrequency = after / 10
+	)
+	if tickFrequency > time.Second*10 || tickFrequency == 0 {
+		tickFrequency = time.Second * 10
+	}
+
+	// temporary fallback to handle count-down
+	tmpFallback := NewFallbackServer(s.Server)
+	go func() { _ = tmpFallback.ListenAndServe() }()
+
+	signal.Notify(s.ReceiveInterrupt(), os.Interrupt, syscall.SIGTERM)
+
+	ticker := time.NewTicker(tickFrequency)
+	timer := time.NewTimer(after)
+	for {
+
+		select {
+		case t := <-ticker.C:
+			s.Infof("Restarting in %s...", now.Sub(t).Round(tickFrequency))
+
+		case <-s.ReceiveInterrupt():
+			ticker.Stop()
+			_ = tmpFallback.Close()
+			return
+
+		case <-timer.C:
+			ticker.Stop()
+			_ = tmpFallback.Close()
+			defer main()
+			return
+
+		}
+	}
+}
+
+func (s restartableServer) SetHandler(handler http.Handler) { s.Server.Handler = handler }
+
+func (s restartableServer) ShutdownOrRestart(main func(), after, timeout time.Duration) {
+	defer s.Restart(main, after)
+
+	signal.Notify(s.ReceiveInterrupt(), os.Interrupt, syscall.SIGTERM)
+	s.Infof("Received signal: %v", <-s.ReceiveInterrupt())
+	s.Info("Terminating server...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	if err := s.Shutdown(ctx); err != nil {
+		s.Panic(util.GetErrorWithStacktrace(err))
+	}
+}
+
+func NewFallbackServer(s *http.Server) *http.Server {
+	router := gin.New()
+	router.Use(gin.LoggerWithConfig(gin.LoggerConfig{Output: io.Discard}), gin.Recovery())
+	router.Any("/*any", func(c *gin.Context) {
+		SendErrorResponseV2(c, fmt.Errorf("server is down, come back later, please"), http.StatusGone)
+	})
+	return &http.Server{
+		Addr:      s.Addr,
+		TLSConfig: s.TLSConfig,
+		Handler:   router,
+	}
+}
+
+func NewRestartableServer(server *http.Server, logger *log.Logger) *restartableServer {
+	s := &restartableServer{
+		Server: server,
+		Logger: logger,
+		sig:    make(chan os.Signal, 1),
+	}
+	if s.Logger == nil {
+		s.Logger = log.NewStdoutLogger("HttpServer")
+	}
+	if s.Server == nil {
+		s.Server = &http.Server{}
+	}
+
+	return s
+}
