@@ -1,0 +1,43 @@
+package utils
+
+import (
+	"os"
+	"testing"
+	"time"
+
+	"github.com/gin-gonic/gin"
+)
+
+func TestRestartableServer(t *testing.T) {
+	t.SkipNow()
+
+	gin.SetMode(gin.TestMode)
+
+	var (
+		server = NewRestartableServer(nil, nil)
+		main   func()
+	)
+	main = func() {
+		server = NewRestartableServer(nil, nil)
+		fallback := NewFallbackServer(server.GetServer())
+		go func() { _ = fallback.ListenAndServe() }()
+
+		router := gin.Default()
+		server.SetHandler(router)
+
+		_ = fallback.Close()
+		go server.ListenAndServeWithRecover(main, time.Second)
+		server.ShutdownOrRestart(main, time.Second, time.Minute)
+	}
+	go func() {
+		<-time.After(time.Millisecond * 200)
+		server.ReceiveInterrupt() <- os.Interrupt
+		<-time.After(time.Millisecond * 1200)
+		server.ReceiveInterrupt() <- os.Interrupt
+		<-time.After(time.Millisecond * 200)
+		server.ReceiveInterrupt() <- os.Interrupt
+		<-time.After(time.Millisecond * 200)
+		server.ReceiveInterrupt() <- os.Interrupt
+	}()
+	main()
+}
