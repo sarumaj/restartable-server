@@ -1,24 +1,27 @@
-package utils
+package restartableserver
 
 import (
+	"bytes"
+	"log"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/gin-gonic/gin"
+	gin "github.com/gin-gonic/gin"
 )
 
 func TestRestartableServer(t *testing.T) {
-	t.SkipNow()
-
 	gin.SetMode(gin.TestMode)
 
-	var (
-		server = NewRestartableServer(nil, nil)
-		main   func()
-	)
+	logger := log.Default()
+	buffer := bytes.NewBuffer(nil)
+	logger.SetOutput(buffer)
+
+	var server *restartableServer
+	var main func()
+
 	main = func() {
-		server = NewRestartableServer(nil, nil)
+		server = NewRestartableServer(nil, logger)
 		fallback := NewFallbackServer(server.GetServer())
 		go func() { _ = fallback.ListenAndServe() }()
 
@@ -29,15 +32,19 @@ func TestRestartableServer(t *testing.T) {
 		go server.ListenAndServeWithRecover(main, time.Second)
 		server.ShutdownOrRestart(main, time.Second, time.Minute)
 	}
+
 	go func() {
 		<-time.After(time.Millisecond * 200)
-		server.ReceiveInterrupt() <- os.Interrupt
+		server.InterruptSender() <- os.Interrupt
 		<-time.After(time.Millisecond * 1200)
-		server.ReceiveInterrupt() <- os.Interrupt
+		server.InterruptSender() <- os.Interrupt
 		<-time.After(time.Millisecond * 200)
-		server.ReceiveInterrupt() <- os.Interrupt
+		server.InterruptSender() <- os.Interrupt
 		<-time.After(time.Millisecond * 200)
-		server.ReceiveInterrupt() <- os.Interrupt
+		server.InterruptSender() <- os.Interrupt
 	}()
+
 	main()
+
+	t.Log(buffer.String())
 }

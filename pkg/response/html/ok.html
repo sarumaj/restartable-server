@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>200 - OK</title>
+    <style>
+      @keyframes bounce {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-20px);
+        }
+      }
+      body {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        font-family: Arial, sans-serif;
+        background: linear-gradient(to right, #b0ff66, #3fa517);
+      }
+      h1 {
+        font-size: 2em;
+        color: #fff;
+        animation: bounce 2s infinite;
+      }
+      p {
+        color: #fff;
+      }
+      button {
+        padding: 10px 20px;
+        margin-top: 20px;
+        font-size: 1em;
+        color: #fff;
+        background-color: #007bff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <h1>Welcome!</h1>
+      <p>
+        This is a demonstration of an HTTP server implemented in GO, which<br />
+        can be restarted on demand or restart on its own when dealing with<br />
+        unhandled exception.
+      </p>
+      <p>Server {{ .ServerID }} is up and running.</p>
+      <p id="uptime">Server Uptime: Loading...</p>
+      <p>Click the button below to restart the server!</p>
+      <button onclick="restart()">Restart Server</button>
+    </div>
+    <script>
+      var displayServerUptimeID = setInterval(displayServerUptime, 1000);
+
+      async function displayServerUptime() {
+        await fetch("/uptime", {
+          method: "GET",
+          cache: "no-store",
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            document.getElementById(
+              "uptime"
+            ).textContent = `Server Uptime: ${data.Elapsed}.`;
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function restart() {
+        fetch("/restart", {
+          method: "GET",
+          cache: "no-store",
+        })
+          .then(() => {
+            clearInterval(displayServerUptimeID);
+            location.reload();
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>410 - Gone</title>
+    <style>
+      @keyframes bounce {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-20px);
+        }
+      }
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        font-family: Arial, sans-serif;
+        background: linear-gradient(to right, #ff9966, #ff5e62);
+      }
+      h1 {
+        font-size: 2em;
+        color: #fff;
+        animation: bounce 2s infinite;
+      }
+      p {
+        color: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <h1>410 - Gone</h1>
+      <p>I am sorry, the server appears to be down.</p>
+      <p>I am just a fallback server {{ .ServerID }}.</p>
+      <p id="downtime">Server Downtime: Loading...</p>
+    </div>
+    <script>
+      var displayServerDowntimeID = setInterval(displayServerDowntime, 1000);
+
+      async function displayServerDowntime() {
+        await fetch("/downtime", {
+          method: "GET",
+          cache: "no-store",
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            document.getElementById(
+              "downtime"
+            ).textContent = `Server Downtime: ${data.Elapsed}.`;
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      var pingAndReloadIfStatusChangedID = setInterval(
+        pingAndReloadIfStatusChanged,
+        1000
+      );
+
+      async function pingAndReloadIfStatusChanged() {
+        try {
+          const response = await fetch("/", {
+            method: "GET",
+            cache: "no-store",
+          });
+          if (response.status === 200) {
+            clearInterval(displayServerDowntimeID);
+            clearInterval(pingAndReloadIfStatusChangedID);
+            location.reload();
+          }
+        } catch (error) {
+          console.error("Error:", error);
+        }
+      }
+    </script>
+  </body>
+</html>
