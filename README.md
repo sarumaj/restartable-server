@@ -12,7 +12,8 @@ Provided as Proof of Concepts. Currently available at [restartable-server.heroku
 ## Local deployment
 
 ```
-go build cmd/server/main.go
+go -o server build cmd/server/main.go
+./server
 ```
 
 ## Deployment on Heroku
