@@ -19,7 +19,7 @@ https://github.com/sarumaj/restartable-server/assets/71898979/b511aa0e-707c-4260
 ## Local deployment
 
 ```
-go -o server build cmd/server/main.go
+go build -o server cmd/server/main.go
 ./server
 ```
 
