@@ -9,6 +9,8 @@ Implementation of a HTTP server resilient to SIGTERM OS signal and restartable o
 
 Provided as Proof of Concepts. Currently available at [restartable-server.heroku.com](https://restartable-server-a78d4e6a2c84.herokuapp.com/).
 
+https://github.com/sarumaj/restartable-server/assets/71898979/b511aa0e-707c-4260-a8b0-b3179a165e7e
+
 ## Local deployment
 
 ```
