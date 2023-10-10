@@ -1,4 +1,4 @@
-FROM golang:latest
+FROM golang:latest AS builder
 
 WORKDIR /usr/src/app
 
@@ -8,11 +8,13 @@ RUN go mod download && go mod verify
 
 COPY . .
 
-RUN go build \
+RUN go test -v ./... && \
+    go build \
     -trimpath \
     -ldflags="-s -w -extldflags=-static" \
     -tags="osusergo netgo static_build" \
-    -o "/restartable-server" \
-    "cmd/server/main.go" && rm -rf /usr/src/app
+    -o /server \
+    "cmd/server/main.go" && \
+    rm -rf /usr/src/app
 
-CMD ["/restartable-server"]
+CMD ["/server"]
