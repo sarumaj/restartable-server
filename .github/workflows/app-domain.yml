@@ -11,16 +11,24 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install Certbot
         run: sudo apt-get update && sudo apt-get install -y certbot
+
+      - name: Prepare Hooks
+        run: |
+          chmod +x ./hooks/manual-auth-hook.sh
+          chmod +x ./hooks/manual-cleanup-hook.sh
 
       - name: Obtain Let's Encrypt Wildcard Certificate
         env:
           EMAIL: ${{ secrets.HEROKU_USER_EMAIL }}
           DOMAIN: ${{ secrets.HEROKU_APP_DOMAIN }}
         run: |
+          ls -la /github/workspace
           sudo certbot certonly \
             --manual \
             --preferred-challenges=dns \
