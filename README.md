@@ -1,5 +1,8 @@
+[![deploy](https://github.com/sarumaj/ldap-cli/actions/workflows/deploy.yml/badge.svg)](https://github.com/sarumaj/ldap-cli/actions/workflows/deploy.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/sarumaj/restartable-server)](https://goreportcard.com/report/github.com/sarumaj/restartable-server)
 [![Maintainability](https://img.shields.io/codeclimate/maintainability-percentage/sarumaj/restartable-server.svg)](https://codeclimate.com/github/sarumaj/restartable-server/maintainability)
+[![Go Reference](https://pkg.go.dev/badge/github.com/sarumaj/restartable-server.svg)](https://pkg.go.dev/github.com/sarumaj/restartable-server)
+[![Go version](https://img.shields.io/github/go-mod/go-version/sarumaj/restartable-server?logo=go&label=&labelColor=gray)](https://go.dev)
 
 ---
 
