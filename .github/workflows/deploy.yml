@@ -1,4 +1,4 @@
-name: build_and_release
+name: deploy_to_heroku
 on:
   push:
     tags:

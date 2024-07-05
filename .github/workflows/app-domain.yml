@@ -1,4 +1,4 @@
-name: Renew and Deploy Let's Encrypt Wildcard Certificate
+name: renew_and_deploy_ssl_cert
 
 on:
   schedule:
@@ -21,7 +21,16 @@ jobs:
           EMAIL: ${{ secrets.HEROKU_USER_EMAIL }}
           DOMAIN: ${{ secrets.HEROKU_APP_DOMAIN }}
         run: |
-          sudo certbot certonly --manual --preferred-challenges=dns --email $EMAIL --server https://acme-v02.api.letsencrypt.org/directory --agree-tos -d "*.$DOMAIN" -d "$DOMAIN"
+          sudo certbot certonly \
+            --manual \
+            --preferred-challenges=dns \
+            --email $EMAIL \
+            --server https://acme-v02.api.letsencrypt.org/directory \
+            --agree-tos -d "$DOMAIN" \
+            --manual-public-ip-logging-ok \
+            --non-interactive \
+            --manual-auth-hook "/github/workspace/hooks/manual-auth-hook.sh" \
+            --manual-cleanup-hook "/github/workspace/hooks/manual-cleanup-hook.sh"
 
       - name: Install Heroku CLI
         run: curl https://cli-assets.heroku.com/install.sh | sh
