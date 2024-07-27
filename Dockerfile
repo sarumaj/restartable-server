@@ -17,4 +17,8 @@ RUN go test -v ./... && \
     "cmd/server/main.go" && \
     rm -rf /usr/src/app
 
-CMD ["/server"]
+FROM scratch AS final
+
+COPY --from=builder /server /
+
+ENTRYPOINT ["/server"]
