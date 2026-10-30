@@ -34,7 +34,7 @@ jobs:
         go install golang.org/x/tools/gopls@latest && \
         go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
     - name: Run linters
-      run: gofmt -s -d ./ && golangci-lint run -v
+      run: gofmt -s -d ./ && golangci-lint run -v --timeout 5m
     - name: Deploy to apps
       shell: bash
       env:
