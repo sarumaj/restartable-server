@@ -105,7 +105,7 @@ func (s restartableServer) Restart(main func(), after time.Duration) {
 }
 
 // Set handler engine for the HTTP server
-func (s restartableServer) SetHandler(handler http.Handler) { s.Server.Handler = handler }
+func (s restartableServer) SetHandler(handler http.Handler) { s.Handler = handler }
 
 // Gracefully shutdown the server with a graceful timeout
 // and restart it after specified amount of time
