@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file. The release bot
 writes each version's section from the commits (Conventional Commits) and the hand-written
 Unreleased section.
 
+## 0.0.5 - 2026-11-16
+
+### Changed
+
+- set the handler through the embedded server's promoted field (staticcheck QF1008)
+
 ## 0.0.4 - 2026-11-09
 
 ### Dependencies
